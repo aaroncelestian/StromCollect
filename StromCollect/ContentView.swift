@@ -1,61 +1,44 @@
-//
-//  ContentView.swift
-//  StromCollect
-//
-//  Created by Aaron Celestian on 9/5/25.
-//
-
 import SwiftUI
 import SwiftData
 
+// MARK: - Main Content View
 struct ContentView: View {
-    @Environment(\.modelContext) private var modelContext
-    @Query private var items: [Item]
-
+    @StateObject private var workflowController = WorkflowController()
+    
     var body: some View {
-        NavigationSplitView {
-            List {
-                ForEach(items) { item in
-                    NavigationLink {
-                        Text("Item at \(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))")
-                    } label: {
-                        Text(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))
-                    }
+        NavigationView {
+            VStack {
+                // Progress indicator
+                ProgressIndicatorView(currentState: workflowController.currentState)
+                
+                // Main content area
+                switch workflowController.currentState {
+                case .setup:
+                    SetupView(workflowController: workflowController)
+                case .drawerOverview:
+                    DrawerOverviewView(workflowController: workflowController)
+                case .specimenIdentification:
+                    SpecimenIdentificationView(workflowController: workflowController)
+                case .specimenDocumentation:
+                    SpecimenDocumentationView(workflowController: workflowController)
+                case .fieldBookCapture:
+                    FieldBookCaptureView(workflowController: workflowController)
+                case .voiceAnnotation:
+                    VoiceAnnotationView(workflowController: workflowController)
+                case .qualityReview:
+                    QualityReviewView(workflowController: workflowController)
+                case .completion:
+                    CompletionView(workflowController: workflowController)
                 }
-                .onDelete(perform: deleteItems)
+                
+                Spacer()
+                
+                // Navigation controls
+                NavigationControlsView(workflowController: workflowController)
             }
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    EditButton()
-                }
-                ToolbarItem {
-                    Button(action: addItem) {
-                        Label("Add Item", systemImage: "plus")
-                    }
-                }
-            }
-        } detail: {
-            Text("Select an item")
+            .padding()
+            .navigationTitle("Stromatolite Collector")
+            .navigationBarTitleDisplayMode(.inline)
         }
     }
-
-    private func addItem() {
-        withAnimation {
-            let newItem = Item(timestamp: Date())
-            modelContext.insert(newItem)
-        }
-    }
-
-    private func deleteItems(offsets: IndexSet) {
-        withAnimation {
-            for index in offsets {
-                modelContext.delete(items[index])
-            }
-        }
-    }
-}
-
-#Preview {
-    ContentView()
-        .modelContainer(for: Item.self, inMemory: true)
 }
