@@ -61,10 +61,12 @@
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>NSCameraUsageDescription</key>
-	<string>This app needs camera access to photograph stromatolite specimens and field book pages.</string>
+	<string>StromCollect needs camera access to photograph stromatolite specimens and field book pages for scientific documentation.</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>This app needs microphone access to record voice annotations for specimens.</string>
+	<string>StromCollect needs microphone access to record voice annotations and notes for specimen documentation.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>This app needs photo library access to save specimen images.</string>
+	<string>StromCollect needs photo library access to save and organize specimen images for research purposes.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>StromCollect needs permission to save specimen photos to your photo library for backup and sharing.</string>
 </dict>
 </plist>

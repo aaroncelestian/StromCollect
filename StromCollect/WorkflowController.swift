@@ -33,6 +33,10 @@ class WorkflowController: ObservableObject {
         currentState = .specimenDocumentation
     }
     
+    func jumpToState(_ state: CollectionWorkflowState) {
+        currentState = state
+    }
+    
     func validateCurrentStep() -> Bool {
         switch currentState {
         case .setup:

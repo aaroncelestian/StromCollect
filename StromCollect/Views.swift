@@ -37,44 +37,220 @@ struct ProgressIndicatorView: View {
 // MARK: - Setup View
 struct SetupView: View {
     @ObservedObject var workflowController: WorkflowController
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @StateObject private var cameraController = SpecimenCameraController()
+    @State private var showingPermissionAlert = false
+    @State private var permissionMessage = ""
     
     var body: some View {
-        VStack(spacing: 20) {
-            Text("Collection Setup")
-                .font(.largeTitle)
-                .fontWeight(.bold)
-            
-            VStack(alignment: .leading, spacing: 16) {
-                VStack(alignment: .leading) {
-                    Text("Locality/Location")
-                        .font(.headline)
-                    TextField("Enter collection locality", text: $workflowController.collection.locality)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
+        ScrollView {
+            VStack(spacing: 24) {
+                if horizontalSizeClass != .regular {
+                    Text("Collection Setup")
+                        .font(.largeTitle)
+                        .fontWeight(.bold)
                 }
                 
-                VStack(alignment: .leading) {
-                    Text("Collector Name")
+                if horizontalSizeClass == .regular {
+                    // iPad layout - use a form-style layout with more space
+                    VStack(spacing: 24) {
+                        FormSection(title: "Collection Information") {
+                            VStack(spacing: 16) {
+                                FormField(title: "Locality/Location", icon: "location") {
+                                    TextField("Enter collection locality", text: $workflowController.collection.locality)
+                                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                                }
+                                
+                                FormField(title: "Collector Name", icon: "person") {
+                                    TextField("Enter collector name", text: $workflowController.collection.collectorName)
+                                        .textFieldStyle(RoundedBorderTextFieldStyle())
+                                }
+                                
+                                FormField(title: "Collection Date", icon: "calendar") {
+                                    DatePicker("", selection: $workflowController.collection.collectionDate, displayedComponents: .date)
+                                        .datePickerStyle(CompactDatePickerStyle())
+                                }
+                            }
+                        }
+                        
+                        InstructionCard(
+                            title: "Setup Instructions",
+                            content: "Enter the basic information for this collection session. Make sure the locality and collector name are accurate as they will be included in all specimen records."
+                        )
+                        
+                        Button(action: {
+                            requestPermissions()
+                        }) {
+                            HStack {
+                                Image(systemName: "camera")
+                                Image(systemName: "mic")
+                                Text("Request Camera & Microphone Access")
+                            }
+                            .font(.headline)
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.blue)
+                            .cornerRadius(12)
+                        }
+                    }
+                    .frame(maxWidth: 600)
+                } else {
+                    // iPhone layout - compact form
+                    VStack(alignment: .leading, spacing: 16) {
+                        VStack(alignment: .leading) {
+                            Text("Locality/Location")
+                                .font(.headline)
+                            TextField("Enter collection locality", text: $workflowController.collection.locality)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                        }
+                        
+                        VStack(alignment: .leading) {
+                            Text("Collector Name")
+                                .font(.headline)
+                            TextField("Enter collector name", text: $workflowController.collection.collectorName)
+                                .textFieldStyle(RoundedBorderTextFieldStyle())
+                        }
+                        
+                        VStack(alignment: .leading) {
+                            Text("Collection Date")
+                                .font(.headline)
+                            DatePicker("", selection: $workflowController.collection.collectionDate, displayedComponents: .date)
+                                .datePickerStyle(CompactDatePickerStyle())
+                        }
+                    }
+                    .padding()
+                    .background(Color(.systemGray6))
+                    .cornerRadius(12)
+                    
+                    Text("Enter the basic information for this collection session. Make sure the locality and collector name are accurate as they will be included in all specimen records.")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                    
+                    Button(action: {
+                        requestPermissions()
+                    }) {
+                        HStack {
+                            Image(systemName: "camera")
+                            Image(systemName: "mic")
+                            Text("Request Camera & Microphone Access")
+                        }
                         .font(.headline)
-                    TextField("Enter collector name", text: $workflowController.collection.collectorName)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                }
-                
-                VStack(alignment: .leading) {
-                    Text("Collection Date")
-                        .font(.headline)
-                    DatePicker("", selection: $workflowController.collection.collectionDate, displayedComponents: .date)
-                        .datePickerStyle(CompactDatePickerStyle())
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.blue)
+                        .cornerRadius(12)
+                    }
                 }
             }
             .padding()
-            .background(Color(.systemGray6))
-            .cornerRadius(12)
-            
-            Text("Enter the basic information for this collection session. Make sure the locality and collector name are accurate as they will be included in all specimen records.")
-                .font(.caption)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
         }
+        .alert("Permissions", isPresented: $showingPermissionAlert) {
+            Button("Settings") {
+                if let settingsURL = URL(string: UIApplication.openSettingsURLString) {
+                    UIApplication.shared.open(settingsURL)
+                }
+            }
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(permissionMessage)
+        }
+    }
+    
+    private func requestPermissions() {
+        cameraController.requestAllPermissions { cameraGranted, micGranted in
+            var messages: [String] = []
+            
+            if !cameraGranted {
+                messages.append("Camera access is required for photographing specimens")
+            }
+            
+            if !micGranted {
+                messages.append("Microphone access is required for voice annotations")
+            }
+            
+            if !messages.isEmpty {
+                permissionMessage = messages.joined(separator: "\n\n") + "\n\nYou can enable these permissions in Settings."
+                showingPermissionAlert = true
+            } else {
+                permissionMessage = "All permissions granted! You can now use the camera and microphone features."
+                showingPermissionAlert = true
+            }
+        }
+    }
+}
+
+// MARK: - Reusable Components
+struct FormSection<Content: View>: View {
+    let title: String
+    let content: Content
+    
+    init(title: String, @ViewBuilder content: () -> Content) {
+        self.title = title
+        self.content = content()
+    }
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text(title)
+                .font(.title2)
+                .fontWeight(.semibold)
+            
+            content
+        }
+        .padding(24)
+        .background(Color(.systemGray6))
+        .cornerRadius(16)
+    }
+}
+
+struct FormField<Content: View>: View {
+    let title: String
+    let icon: String
+    let content: Content
+    
+    init(title: String, icon: String, @ViewBuilder content: () -> Content) {
+        self.title = title
+        self.icon = icon
+        self.content = content()
+    }
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Image(systemName: icon)
+                    .foregroundColor(.blue)
+                Text(title)
+                    .font(.headline)
+            }
+            
+            content
+        }
+    }
+}
+
+struct InstructionCard: View {
+    let title: String
+    let content: String
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: "info.circle")
+                    .foregroundColor(.blue)
+                Text(title)
+                    .font(.headline)
+            }
+            
+            Text(content)
+                .font(.body)
+                .foregroundColor(.secondary)
+        }
+        .padding(20)
+        .background(Color.blue.opacity(0.1))
+        .cornerRadius(12)
     }
 }
 
@@ -157,6 +333,25 @@ struct CameraView: View {
                 .edgesIgnoringSafeArea(.all)
             
             VStack {
+                HStack {
+                    Spacer()
+                    
+                    if cameraController.canSwitchCamera {
+                        Button(action: {
+                            cameraController.switchCamera()
+                        }) {
+                            Image(systemName: "camera.rotate")
+                                .font(.title2)
+                                .foregroundColor(.white)
+                                .padding()
+                                .background(Color.black.opacity(0.6))
+                                .clipShape(Circle())
+                        }
+                        .padding(.trailing)
+                    }
+                }
+                .padding(.top, 50)
+                
                 Spacer()
                 
                 HStack {
@@ -172,7 +367,7 @@ struct CameraView: View {
                         cameraController.capturePhoto()
                     }) {
                         Circle()
-                            .fill(Color.white)
+                            .fill(cameraController.isSessionReady ? Color.white : Color.gray)
                             .frame(width: 70, height: 70)
                             .overlay(
                                 Circle()
@@ -180,7 +375,7 @@ struct CameraView: View {
                                     .frame(width: 60, height: 60)
                             )
                     }
-                    .disabled(cameraController.isCapturing)
+                    .disabled(cameraController.isCapturing || !cameraController.isSessionReady)
                     
                     Spacer()
                     
@@ -237,7 +432,7 @@ struct CameraPreview: UIViewRepresentable {
         
         let previewLayer = AVCaptureVideoPreviewLayer(session: cameraController.captureSession)
         previewLayer.frame = view.bounds
-        previewLayer.videoGravity = AVLayerVideoGravity.resizeAspectFill
+        previewLayer.videoGravity = .resizeAspectFill
         view.layer.addSublayer(previewLayer)
         
         return view
@@ -297,6 +492,127 @@ struct NavigationControlsView: View {
             .buttonStyle(.borderedProminent)
         }
         .padding()
+    }
+}
+
+// MARK: - iPad-Optimized Views
+struct WorkflowSidebarView: View {
+    @ObservedObject var workflowController: WorkflowController
+    
+    var body: some View {
+        List {
+            Section("Collection Progress") {
+                ForEach(CollectionWorkflowState.allCases, id: \.self) { state in
+                    HStack {
+                        Image(systemName: iconForState(state))
+                            .foregroundColor(workflowController.currentState == state ? .blue : .secondary)
+                        
+                        VStack(alignment: .leading) {
+                            Text(state.rawValue)
+                                .font(.headline)
+                            if state == workflowController.currentState {
+                                Text("Current Step")
+                                    .font(.caption)
+                                    .foregroundColor(.blue)
+                            }
+                        }
+                        
+                        Spacer()
+                        
+                        if isStateCompleted(state) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundColor(.green)
+                        }
+                    }
+                    .padding(.vertical, 4)
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        workflowController.jumpToState(state)
+                    }
+                }
+            }
+            
+            Section("Collection Info") {
+                VStack(alignment: .leading, spacing: 8) {
+                    Label("Locality", systemImage: "location")
+                    Text(workflowController.collection.locality.isEmpty ? "Not set" : workflowController.collection.locality)
+                        .foregroundColor(.secondary)
+                    
+                    Label("Collector", systemImage: "person")
+                    Text(workflowController.collection.collectorName.isEmpty ? "Not set" : workflowController.collection.collectorName)
+                        .foregroundColor(.secondary)
+                    
+                    Label("Date", systemImage: "calendar")
+                    Text(workflowController.collection.collectionDate, style: .date)
+                        .foregroundColor(.secondary)
+                }
+                .padding(.vertical, 8)
+            }
+        }
+        .navigationTitle("Workflow")
+        .frame(minWidth: 300)
+    }
+    
+    private func iconForState(_ state: CollectionWorkflowState) -> String {
+        switch state {
+        case .setup: return "gear"
+        case .drawerOverview: return "photo.on.rectangle"
+        case .specimenIdentification: return "magnifyingglass"
+        case .specimenDocumentation: return "camera"
+        case .fieldBookCapture: return "book"
+        case .voiceAnnotation: return "mic"
+        case .qualityReview: return "checkmark.seal"
+        case .completion: return "flag.checkered"
+        }
+    }
+    
+    private func isStateCompleted(_ state: CollectionWorkflowState) -> Bool {
+        let currentIndex = CollectionWorkflowState.allCases.firstIndex(of: workflowController.currentState) ?? 0
+        let stateIndex = CollectionWorkflowState.allCases.firstIndex(of: state) ?? 0
+        return stateIndex < currentIndex
+    }
+}
+
+struct WorkflowDetailView: View {
+    @ObservedObject var workflowController: WorkflowController
+    
+    var body: some View {
+        VStack {
+            WorkflowContentView(workflowController: workflowController)
+            
+            Spacer()
+            
+            NavigationControlsView(workflowController: workflowController)
+                .padding()
+        }
+        .navigationTitle(workflowController.currentState.rawValue)
+        .navigationBarTitleDisplayMode(.large)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+struct WorkflowContentView: View {
+    @ObservedObject var workflowController: WorkflowController
+    
+    var body: some View {
+        switch workflowController.currentState {
+        case .setup:
+            SetupView(workflowController: workflowController)
+        case .drawerOverview:
+            DrawerOverviewView(workflowController: workflowController)
+        case .specimenIdentification:
+            SpecimenIdentificationView(workflowController: workflowController)
+        case .specimenDocumentation:
+            SpecimenDocumentationView(workflowController: workflowController)
+        case .fieldBookCapture:
+            FieldBookCaptureView(workflowController: workflowController)
+        case .voiceAnnotation:
+            VoiceAnnotationView(workflowController: workflowController)
+        case .qualityReview:
+            QualityReviewView(workflowController: workflowController)
+        case .completion:
+            CompletionView(workflowController: workflowController)
+        }
     }
 }
 

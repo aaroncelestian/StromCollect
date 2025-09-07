@@ -29,9 +29,22 @@
 		DA6027222E6BE98700F98913 /* StromCollectUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = StromCollectUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		DA28E9512E6CFCAB00DB1BB0 /* Exceptions for "StromCollect" folder in "StromCollect" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = DA6027082E6BE98500F98913 /* StromCollect */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		DA60270B2E6BE98500F98913 /* StromCollect */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				DA28E9512E6CFCAB00DB1BB0 /* Exceptions for "StromCollect" folder in "StromCollect" target */,
+			);
 			path = StromCollect;
 			sourceTree = "<group>";
 		};
