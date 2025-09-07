@@ -169,7 +169,7 @@ StromCollect provides a structured, step-by-step workflow for documenting stroma
 - **Text Recognition**: Verify OCR text accuracy and confidence scores
 - **Scientific Data**: Complete all relevant identification fields for research quality
 - **Validation**: Follow automated quality recommendations throughout workflow
-- **Accessibility**: Large touch targets and clear instructions designed for elderly users
+- **Accessibility**: Large touch targets and clear instructions 
 
 ## Data Structure
 
