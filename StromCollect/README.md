@@ -38,7 +38,7 @@ StromCollect provides a structured, step-by-step workflow for documenting stroma
 - **Simultaneous audio recording and live transcription** display
 - **High-quality audio recording** (M4A format) with quality validation
 - **Searchable transcription storage** for historical specimen stories
-- **Large accessible controls** designed for elderly users
+- **Large accessible controls** designed for accessibility
 - **Optional workflow integration** - voice notes don't block progression
 - **Edit transcription capability** for accuracy corrections
 - **Automatic audio session management** with proper permissions
@@ -69,7 +69,7 @@ StromCollect provides a structured, step-by-step workflow for documenting stroma
 - **Responsive UI** supporting both iPad and iPhone layouts
 - **Enhanced search functionality** across all identification fields
 - **SwiftData model binding** with @Bindable for real-time updates
-- **Scientific rigor** while maintaining accessibility for elderly users
+- **Scientific rigor** while maintaining accessibility for users.
 
 ## Technical Architecture
 
@@ -225,7 +225,7 @@ SpecimenRecord
 - **Audio recording system** with quality validation
 - **SwiftData persistence** with modern data management
 - **Responsive UI design** supporting iPad and iPhone layouts
-- **Accessibility features** designed for elderly users
+- **Accessibility features** designed for accessibility
 - **Robust error handling** and permission management
 
 ### Future Enhancements 🚧
