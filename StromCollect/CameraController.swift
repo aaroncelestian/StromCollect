@@ -167,46 +167,6 @@ class SpecimenCameraController: NSObject, ObservableObject {
         }
     }
     
-    func startSession() {
-        guard !captureSession.isRunning else {
-            DispatchQueue.main.async {
-                self.isSessionReady = true
-            }
-            return
-        }
-        
-        DispatchQueue.global(qos: .userInitiated).async {
-            self.captureSession.startRunning()
-            
-            // Wait a moment for session to fully start and validate
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-                let isRunning = self.captureSession.isRunning
-                let hasInputs = !self.captureSession.inputs.isEmpty
-                let hasOutputs = !self.captureSession.outputs.isEmpty
-                
-                self.isSessionReady = isRunning && hasInputs && hasOutputs
-                
-                if !self.isSessionReady {
-                    print("Session not ready - Running: \(isRunning), Inputs: \(hasInputs), Outputs: \(hasOutputs)")
-                }
-            }
-        }
-    }
-    
-    func stopSession() {
-        if captureSession.isRunning {
-            captureSession.stopRunning()
-        }
-        isSessionReady = false
-    }
-    
-    func switchCamera() {
-        let newPosition: AVCaptureDevice.Position = currentCameraPosition == .back ? .front : .back
-        
-        stopSession()
-        setupCamera(for: newPosition)
-        startSession()
-    }
     
     private func setupMockCamera() {
         print("Setting up mock camera for simulator")
@@ -214,6 +174,10 @@ class SpecimenCameraController: NSObject, ObservableObject {
         captureSession.sessionPreset = .photo
         
         captureSession.beginConfiguration()
+        
+        // Remove any existing inputs/outputs
+        captureSession.inputs.forEach { captureSession.removeInput($0) }
+        captureSession.outputs.forEach { captureSession.removeOutput($0) }
         
         // Add photo output even without input for simulator
         if captureSession.canAddOutput(photoOutput) {
@@ -223,18 +187,13 @@ class SpecimenCameraController: NSObject, ObservableObject {
         
         captureSession.commitConfiguration()
         
-        // Set ready state after a delay to simulate camera startup
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+        // For mock camera, we immediately set it as ready since there's no real hardware to initialize
+        DispatchQueue.main.async {
             self.isSessionReady = true
             print("Mock camera ready")
         }
     }
     
-    var canSwitchCamera: Bool {
-        let backCamera = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .back)
-        let frontCamera = AVCaptureDevice.default(.builtInWideAngleCamera, for: .video, position: .front)
-        return backCamera != nil && frontCamera != nil
-    }
     
     func requestMicrophonePermission(completion: @escaping (Bool) -> Void) {
         if #available(iOS 17.0, *) {
@@ -476,6 +435,88 @@ class SpecimenCameraController: NSObject, ObservableObject {
         // Simplified brightness calculation
         // In production, calculate actual luminance
         return Double.random(in: 0.2...0.9) // Mock implementation
+    }
+    
+    // MARK: - Session Management
+    func startSession() {
+        print("Starting camera session...")
+        
+        // Check if session is already running
+        if captureSession.isRunning {
+            print("Session already running")
+            // For mock camera, ensure it's marked as ready
+            if captureDevice == nil && !captureSession.outputs.isEmpty {
+                isSessionReady = true
+                print("Mock camera session already ready")
+            }
+            return
+        }
+        
+        // For mock camera (simulator), we don't need to actually start the session
+        // Just mark it as ready since we have outputs configured
+        if captureDevice == nil {
+            print("Mock camera mode - marking as ready without starting session")
+            DispatchQueue.main.async {
+                self.isSessionReady = !self.captureSession.outputs.isEmpty
+                print("Mock camera ready: \(self.isSessionReady)")
+            }
+            return
+        }
+        
+        // Start the session on a background queue for real cameras
+        DispatchQueue.global(qos: .userInitiated).async {
+            self.captureSession.startRunning()
+            
+            DispatchQueue.main.async {
+                self.isSessionReady = self.captureSession.isRunning && 
+                                   !self.captureSession.inputs.isEmpty && 
+                                   !self.captureSession.outputs.isEmpty
+                
+                print("Real camera session started - Running: \(self.captureSession.isRunning), Inputs: \(!self.captureSession.inputs.isEmpty), Outputs: \(!self.captureSession.outputs.isEmpty)")
+                print("Session ready: \(self.isSessionReady)")
+            }
+        }
+    }
+    
+    func stopSession() {
+        print("Stopping camera session...")
+        
+        // For mock camera, just mark as not ready
+        if captureDevice == nil {
+            isSessionReady = false
+            print("Mock camera session stopped")
+            return
+        }
+        
+        // For real cameras, actually stop the session
+        if captureSession.isRunning {
+            DispatchQueue.global(qos: .userInitiated).async {
+                self.captureSession.stopRunning()
+                
+                DispatchQueue.main.async {
+                    self.isSessionReady = false
+                    print("Real camera session stopped")
+                }
+            }
+        } else {
+            isSessionReady = false
+            print("Session was not running")
+        }
+    }
+    
+    var canSwitchCamera: Bool {
+        // In simulator or mock mode, we can't switch cameras
+        return captureDevice != nil && !captureSession.inputs.isEmpty
+    }
+    
+    func switchCamera() {
+        guard canSwitchCamera else {
+            print("Cannot switch camera - not available")
+            return
+        }
+        
+        let newPosition: AVCaptureDevice.Position = currentCameraPosition == .back ? .front : .back
+        setupCamera(for: newPosition)
     }
 }
 

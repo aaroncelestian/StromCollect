@@ -68,5 +68,7 @@
 	<string>StromCollect needs photo library access to save and organize specimen images for research purposes.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>StromCollect needs permission to save specimen photos to your photo library for backup and sharing.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>StromCollect uses speech recognition to transcribe voice notes and historical stories about specimens in real-time, making the app more accessible for researchers.</string>
 </dict>
 </plist>

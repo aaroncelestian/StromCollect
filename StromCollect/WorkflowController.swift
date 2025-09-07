@@ -43,8 +43,17 @@ class WorkflowController: ObservableObject {
             return !collection.locality.isEmpty && !collection.collectorName.isEmpty
         case .drawerOverview:
             return collection.drawerOverviewImageData != nil
+        case .specimenIdentification:
+            // At least one specimen should be added for identification
+            return !collection.specimens.isEmpty
         case .specimenDocumentation:
             return currentSpecimen?.specimenImageData != nil && !(currentSpecimen?.specimenID.isEmpty ?? true)
+        case .fieldBookCapture:
+            // Field book capture is optional - always allow progression
+            return true
+        case .voiceAnnotation:
+            // Voice annotation is optional - always allow progression
+            return true
         case .qualityReview:
             return collection.specimens.allSatisfy { $0.qualityScore > 0.5 }
         default:
